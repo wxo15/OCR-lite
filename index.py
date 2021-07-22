@@ -1,9 +1,23 @@
 from flask import Flask
+import os
+from flask import render_template, flash, request, redirect, url_for
+from joblib import dump, load
 
-app = Flask(__name__)
+
+app = Flask(__name__, template_folder='')
 
 @app.route("/")
 def hello_world():
-    return '<h1>OCR-lite</h1><canvas width="280" height="280"></canvas>'
+    return render_template('index.html')
 
-app.run()
+
+def load_model_from_file():
+    myModel = load('logres.m5')
+    return myModel
+
+def main():
+    myModel = load_model_from_file()
+    app.config['MODEL'] = myModel
+    app.run()
+
+main()
