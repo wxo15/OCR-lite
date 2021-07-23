@@ -1,12 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
+    <script type="text/javascript">
+        var canvas, ctx, flag = false,
+            prevX = 0,
+            currX = 0,
+            prevY = 0,
+            currY = 0,
+            dot_flag = false;
+    
+        var x = "black",
+            y = 2;
+        
+        function init() {
+            canvas = document.getElementById('drawpad');
+            ctx = canvas.getContext("2d");
+            w = canvas.width;
+            h = canvas.height;
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+            canvas.addEventListener("mousemove", function (e) {
+                findxy('move', e)
+            }, false);
+            canvas.addEventListener("mousedown", function (e) {
+                findxy('down', e)
+            }, false);
+            canvas.addEventListener("mouseup", function (e) {
+                findxy('up', e)
+            }, false);
+            canvas.addEventListener("mouseout", function (e) {
+                findxy('out', e)
+            }, false);
+        }
+        
+        function draw() {
+            ctx.beginPath();
+            ctx.moveTo(prevX, prevY);
+            ctx.lineTo(currX, currY);
+            ctx.strokeStyle = x;
+            ctx.lineWidth = y;
+            ctx.stroke();
+            ctx.closePath();
+        }
+        
+        function erase() {
+            ctx.clearRect(0, 0, w, h);
+            document.getElementById("canvasimg").style.display = "none";
+        }
+        
+        function save() {
+            document.getElementById("canvasimg").style.border = "2px solid";
+            var dataURL = canvas.toDataURL();
+            document.getElementById("canvasimg").src = dataURL;
+            document.getElementById("canvasimg").style.display = "inline";
+        }
+
+        function print() {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            var res = '';
+            for (var i = 0; i < data.length; i += 4) {
+                data[i]     = 255 - data[i];     // red
+                data[i + 1] = 255 - data[i + 1]; // green
+                data[i + 2] = 255 - data[i + 2]; // blue
+            }
+            ctx.putImageData(imageData, 0, 0);
+            document.getElementById("result").innerHTML = res;
+        };
+
+
+        
+        function findxy(res, e) {
+            if (res == 'down') {
+                prevX = currX;
+                prevY = currY;
+                currX = e.clientX - canvas.offsetLeft;
+                currY = e.clientY - canvas.offsetTop;
+        
+                flag = true;
+                dot_flag = true;
+                if (dot_flag) {
+                    ctx.beginPath();
+                    ctx.fillStyle = x;
+                    ctx.fillRect(currX, currY, 2, 2);
+                    ctx.closePath();
+                    dot_flag = false;
+                }
+            }
+            if (res == 'up' || res == "out") {
+                flag = false;
+            }
+            if (res == 'move') {
+                if (flag) {
+                    prevX = currX;
+                    prevY = currY;
+                    currX = e.clientX - canvas.offsetLeft;
+                    currY = e.clientY - canvas.offsetTop;
+                    draw();
+                }
+            }
+        }
+        </script>
+
+
     <head>
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale1, shrink-to-fit=no">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
         <title> OCR-lite</title>
     </head>
-    <h1>OCR-lite</h1>
-    <canvas width="280" height="280"></canvas>
+    <body onload="init()"></body>
+        <h1>OCR-lite</h1>
+        <canvas id="drawpad" width="28" height="28" style="border:1px solid #000000;"></canvas>
+        <img id="canvasimg" style="position:absolute;top:10%;left:52%;" style="display:none;">
+        <input type="button" value="save" id="btn" size="30" onclick="save()" style="position:absolute;top:55%;left:10%;">
+        <input type="button" value="clear" id="clr" size="23" onclick="erase()" style="position:absolute;top:55%;left:15%;">
+        <input type="button" value="invert" id="invert" size="23" onclick="print()" style="position:absolute;top:55%;left:20%;">
+        <p id="result"></p>
+        <div class="row">
+            {% if result is defined %}
+                <p>Answer: {{result}}</p>
+            {% endif %}
+        </div>    
+
+
+    </body>
+
 </html>
