@@ -31,6 +31,7 @@
             canvas.addEventListener("mouseout", function (e) {
                 findxy('out', e)
             }, false);
+            predict();
         }
         
         function draw() {
@@ -69,7 +70,22 @@
             var xhr = new XMLHttpRequest();
             xhr.onreadystatechange = function() {
                 if (this.readyState == 4 && this.status == 200) {
-                    document.getElementById("result").innerHTML = xhr.responseText;
+                    var layout = {
+                        title: 'Guess'
+                    };
+                    res = JSON.parse(xhr.responseText);
+                    var maxprob = -1;
+                    var bestguess = '';
+                    for (var i = 0; i < res['y'].length; i+=1) {
+                        if (res['y'][i] > maxprob) {
+                            maxprob = res['y'][i];
+                            bestguess = res['x'][i];
+                        }
+                    }
+
+                    Plotly.newPlot('graph', [res], layout, {showSendToCloud:true});
+                    
+                    document.getElementById("result").innerHTML = bestguess;
                 }
             };
             xhr.open("POST", "/predict", true);
@@ -122,6 +138,7 @@
                     currX = e.clientX - canvas.offsetLeft;
                     currY = e.clientY - canvas.offsetTop;
                     draw();
+                    predict();
                 }
             }
         }
@@ -131,12 +148,22 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+        <script src="https://cdn.plot.ly/plotly-2.3.0.min.js"></script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
         <title> OCR-lite</title>
     </head>
     <body onload="init()"></body>
-        <h1>OCR-lite</h1>
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="/">OCR-lite</a>
+            </div>
+            <ul class="nav navbar-nav">
+                <li class="active"><a href="/">Home</a></li>
+                <li><a href="/">Current model: {{ modelName }}</a></li>
+            </ul>
+            </div>
+        </nav>
         <canvas id="drawpad" width="28" height="28" style="border:1px solid #000000;"></canvas>
         <img id="canvasimg" style="position:absolute;top:10%;left:52%;" style="display:none;">
         <input type="button" value="save" id="btn" size="30" onclick="save()" style="position:absolute;left:10%;">
@@ -144,6 +171,7 @@
         <input type="button" value="invert" id="invert" size="23" onclick="print()" style="position:absolute;left:20%;">
         <input type="button" value="predict" id="predict" size="23" onclick="predict()" style="position:absolute;left:25%;">
         <p>Guess: <span id="result"></span></p>
+        <div style="width:60vw" id="graph"></div>
 
     </body>
 
