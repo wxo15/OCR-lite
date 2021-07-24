@@ -8,7 +8,7 @@
             currY = 0,
             dot_flag = false;
     
-        var x = "black",
+        var x = "white",
             y = 2;
         
         function init() {
@@ -16,7 +16,7 @@
             ctx = canvas.getContext("2d");
             w = canvas.width;
             h = canvas.height;
-            ctx.fillStyle = "white";
+            ctx.fillStyle = "black";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         
             canvas.addEventListener("mousemove", function (e) {
@@ -44,7 +44,8 @@
         }
         
         function erase() {
-            ctx.clearRect(0, 0, w, h);
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             document.getElementById("canvasimg").style.display = "none";
         }
         
@@ -64,9 +65,14 @@
                     res.push(data[i])
                 }
             }
-            
+            document.getElementById("result").innerHTML = "Loading...";
             var xhr = new XMLHttpRequest();
-            xhr.open("POST", "/", true);
+            xhr.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    document.getElementById("result").innerHTML = xhr.responseText;
+                }
+            };
+            xhr.open("POST", "/predict", true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.send(JSON.stringify({
                 image: res
@@ -133,16 +139,11 @@
         <h1>OCR-lite</h1>
         <canvas id="drawpad" width="28" height="28" style="border:1px solid #000000;"></canvas>
         <img id="canvasimg" style="position:absolute;top:10%;left:52%;" style="display:none;">
-        <input type="button" value="save" id="btn" size="30" onclick="save()" style="position:absolute;top:55%;left:10%;">
-        <input type="button" value="clear" id="clr" size="23" onclick="erase()" style="position:absolute;top:55%;left:15%;">
-        <input type="button" value="invert" id="invert" size="23" onclick="print()" style="position:absolute;top:55%;left:20%;">
-        <input type="button" value="predict" id="predict" size="23" onclick="predict()" style="position:absolute;top:55%;left:25%;">
-        <p id="result"></p>
-        <p>Answer:
-        {% if result is defined %}
-            {{result[0]}}
-        {% endif %}
-        </p>
+        <input type="button" value="save" id="btn" size="30" onclick="save()" style="position:absolute;left:10%;">
+        <input type="button" value="clear" id="clr" size="23" onclick="erase()" style="position:absolute;left:15%;">
+        <input type="button" value="invert" id="invert" size="23" onclick="print()" style="position:absolute;left:20%;">
+        <input type="button" value="predict" id="predict" size="23" onclick="predict()" style="position:absolute;left:25%;">
+        <p>Guess: <span id="result"></span></p>
 
     </body>
 
