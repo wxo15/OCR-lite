@@ -50,4 +50,4 @@ def init():
     app.config['VAR'] = myVar
     app.config['SCALE'] = myScale
 
-app.run()
+# app.run()
