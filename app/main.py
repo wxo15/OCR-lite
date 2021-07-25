@@ -49,6 +49,5 @@ def init():
     app.config['MEAN'] = myMean
     app.config['VAR'] = myVar
     app.config['SCALE'] = myScale
-    app.run()
 
-init()
+app.run()
