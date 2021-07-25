@@ -9,6 +9,7 @@ app = Flask(__name__, template_folder='')
 
 @app.route("/", methods=['GET']) 
 def render():
+    init()
     return render_template('index.html', modelName=app.config['MODELNAME'])
 
 @app.route("/predict", methods=['POST']) 
