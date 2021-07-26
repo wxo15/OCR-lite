@@ -9,8 +9,8 @@ from sklearn.preprocessing import StandardScaler
 
 if os.environ.get('IS_HEROKU', None):
     s3 = boto3.resource('s3',
-        aws_access_key_id= process.env.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key= process.env.AWS_SECRET_ACCESS_KEY)
+        aws_access_key_id= os.environ.get('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key= os.environ.get('AWS_SECRET_ACCESS_KEY'))
 else:
     from keys import awsaccesskey, awssecretkey
 
