@@ -1,9 +1,23 @@
 from flask import Flask
 import os
+from io import BytesIO
 from flask import render_template, flash, request, redirect, url_for
 from joblib import dump, load
 import numpy as np
+import boto3
 from sklearn.preprocessing import StandardScaler
+from keys import awsaccesskey, awssecretkey
+
+
+if os.environ.get('IS_HEROKU', None):
+    s3 = boto3.resource('s3',
+        aws_access_key_id= process.env.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key= process.env.AWS_SECRET_ACCESS_KEY)
+else:
+    s3 = boto3.resource('s3',
+        aws_access_key_id= awsaccesskey(),
+        aws_secret_access_key=awssecretkey())
+
 
 app = Flask(__name__, template_folder='')
 
@@ -36,11 +50,18 @@ def predict():
 
 
 def load_model_from_file():
-    myModel = load('logres.m5')
+    with BytesIO() as data:
+        s3.Bucket('ocr-lite').download_fileobj('logres.m5', data)
+        data.seek(0)
+        myModel = load(data)
     myModelName = 'Logistic Regression'
-    myMean = np.load('logres_mean.npy')
-    myVar = np.load('logres_var.npy')
-    myScale = np.load('logres_scale.npy')
+    myMean = np.frombuffer(s3.Object('ocr-lite', 'logres_mean.npy').get()['Body'].read())[16:]
+    myVar = np.frombuffer(s3.Object('ocr-lite', 'logres_var.npy').get()['Body'].read())[16:]
+    myScale = np.frombuffer(s3.Object('ocr-lite', 'logres_scale.npy').get()['Body'].read())[16:]
+    # myModel = load('logres.m5')
+    # myMean = np.load('logres_mean.npy')
+    # myVar = np.load('logres_var.npy')
+    # myScale = np.load('logres_scale.npy')
     return (myModel, myModelName, myMean, myVar, myScale)
 
 def init():
@@ -51,4 +72,4 @@ def init():
     app.config['VAR'] = myVar
     app.config['SCALE'] = myScale
 
-# app.run()
+app.run()
