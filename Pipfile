@@ -13,6 +13,7 @@ numpy = "1.19.5"
 scikit-learn = "0.24.2"
 sklearn = "*"
 tensorflow-cpu = "*"
+boto3 = "*"
 
 [dev-packages]
 
