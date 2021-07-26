@@ -6,14 +6,14 @@ from joblib import dump, load
 import numpy as np
 import boto3
 from sklearn.preprocessing import StandardScaler
-from keys import awsaccesskey, awssecretkey
-
 
 if os.environ.get('IS_HEROKU', None):
     s3 = boto3.resource('s3',
         aws_access_key_id= process.env.AWS_ACCESS_KEY_ID,
         aws_secret_access_key= process.env.AWS_SECRET_ACCESS_KEY)
 else:
+    from keys import awsaccesskey, awssecretkey
+
     s3 = boto3.resource('s3',
         aws_access_key_id= awsaccesskey(),
         aws_secret_access_key=awssecretkey())
@@ -72,4 +72,5 @@ def init():
     app.config['VAR'] = myVar
     app.config['SCALE'] = myScale
 
-app.run()
+if not(os.environ.get('IS_HEROKU', None)):
+    app.run()
