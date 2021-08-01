@@ -4,4 +4,4 @@ This is a simple Django app to allow users to write a number on a canvas, and a 
 
 Link to [Heroku App](http://ocr-lite.herokuapp.com/).
 
-<kbd>![screenshots](https://github.com/wxo15/OCR-lite/website.gif)</kbd>
+<kbd>![screenshots](https://github.com/wxo15/OCR-lite/blob/main/website.gif)</kbd>
