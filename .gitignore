@@ -130,3 +130,6 @@ dmypy.json
 
 # keys for s3
 app/keys.py
+
+# raw testing csv
+app/*.csv
