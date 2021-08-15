@@ -9,13 +9,11 @@
             dot_flag = false;
     
         var x = "white",
-            y = 2;
+            y = 40;
         
         function init() {
             canvas = document.getElementById('drawpad');
             ctx = canvas.getContext("2d");
-            w = canvas.width;
-            h = canvas.height;
             ctx.fillStyle = "black";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         
@@ -31,6 +29,11 @@
             canvas.addEventListener("mouseout", function (e) {
                 findxy('out', e)
             }, false);
+
+            copy = document.getElementById('copy');
+            copyctx = copy.getContext("2d");
+            copyctx.fillStyle = "black";
+            copyctx.fillRect(0, 0, copy.width, copy.height);
             predict();
         }
         
@@ -38,6 +41,8 @@
             ctx.beginPath();
             ctx.moveTo(prevX, prevY);
             ctx.lineTo(currX, currY);
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
             ctx.strokeStyle = x;
             ctx.lineWidth = y;
             ctx.stroke();
@@ -47,18 +52,13 @@
         function erase() {
             ctx.fillStyle = "black";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            document.getElementById("canvasimg").style.display = "none";
+            replicate();
+            predict();
         }
         
-        function save() {
-            document.getElementById("canvasimg").style.border = "2px solid";
-            var dataURL = canvas.toDataURL();
-            document.getElementById("canvasimg").src = dataURL;
-            document.getElementById("canvasimg").style.display = "inline";
-        }
         
         function predict() {
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const imageData = copyctx.getImageData(0, 0, copy.width, copy.height);
             const data = imageData.data;
             var res = [];
             for (var i = 0; i < data.length; i += 4) {
@@ -71,7 +71,16 @@
             xhr.onreadystatechange = function() {
                 if (this.readyState == 4 && this.status == 200) {
                     var layout = {
-                        title: 'Guess'
+                        title: 'Probability against guesses',
+                        xaxis: {
+                            title: "Guesses",
+                            dtick: 1
+                        },
+                        yaxis: {
+                            title: "Probability",
+                            range: [0, 1],
+                            dtick: 0.2
+                        }
                     };
                     res = JSON.parse(xhr.responseText);
                     var maxprob = -1;
@@ -109,7 +118,9 @@
             document.getElementById("result").innerHTML = res;
         };
 
-
+        function replicate() {
+            copyctx.drawImage(canvas, 0, 0, copy.width, copy.height)
+        }
         
         function findxy(res, e) {
             if (res == 'down') {
@@ -129,6 +140,9 @@
                 }
             }
             if (res == 'up' || res == "out") {
+                if (flag){
+                    predict();
+                }
                 flag = false;
             }
             if (res == 'move') {
@@ -138,7 +152,7 @@
                     currX = e.clientX - canvas.offsetLeft;
                     currY = e.clientY - canvas.offsetTop;
                     draw();
-                    predict();
+                    replicate();
                 }
             }
         }
@@ -151,6 +165,26 @@
         <script src="https://cdn.plot.ly/plotly-2.3.0.min.js"></script>
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
         <title> OCR-lite</title>
+        <style>
+            * {
+              box-sizing: border-box;
+            }
+            
+            /* Create two equal columns that floats next to each other */
+            .column {
+              float: left;
+              width: 50%;
+              padding: 10px;
+              height: 300px; /* Should be removed. Only for demonstration */
+            }
+            
+            /* Clear floats after the columns */
+            .row:after {
+              content: "";
+              display: table;
+              clear: both;
+            }
+        </style>
     </head>
     <body onload="init()"></body>
         <nav class="navbar navbar-default">
@@ -164,15 +198,22 @@
             </ul>
             </div>
         </nav>
-        <canvas id="drawpad" width="28" height="28" style="border:1px solid #000000;"></canvas>
-        <img id="canvasimg" style="position:absolute;top:10%;left:52%;" style="display:none;">
-        <input type="button" value="save" id="btn" size="30" onclick="save()" style="position:absolute;left:10%;">
-        <input type="button" value="clear" id="clr" size="23" onclick="erase()" style="position:absolute;left:15%;">
+
+        <div class="row">
+            <div class="column">
+                <canvas id="drawpad" width="560" height="560" style="border:1px solid #000000;"></canvas>
+                <canvas id="copy" width="28" height="28" style="border:1px solid #000000;"></canvas>
+                <input type="button" value="clear" id="clr" size="23" onclick="erase()">
+            </div>
+            <div class="column">
+                <p><b>Best guess</b>: <span id="result"></span></p>
+                <div style="width:40vw" id="graph"></div>
+            </div>
+        </div>
+        <!--<input type="button" value="save" id="btn" size="30" onclick="save()" style="position:absolute;left:10%;">
         <input type="button" value="invert" id="invert" size="23" onclick="print()" style="position:absolute;left:20%;">
         <input type="button" value="predict" id="predict" size="23" onclick="predict()" style="position:absolute;left:25%;">
-        <p>Guess: <span id="result"></span></p>
-        <div style="width:60vw" id="graph"></div>
-
+        -->
     </body>
 
 </html>

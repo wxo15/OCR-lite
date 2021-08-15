@@ -6,6 +6,7 @@ from joblib import dump, load
 import numpy as np
 import boto3
 from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.models import load_model
 
 if os.environ.get('IS_HEROKU', None):
     s3 = boto3.resource('s3',
@@ -23,33 +24,44 @@ app = Flask(__name__, template_folder='')
 
 @app.route("/", methods=['GET']) 
 def render():
-    init()
+    init_logres()
+    init_CNN()
     return render_template('index.html', modelName=app.config['MODELNAME'])
 
 @app.route("/predict", methods=['POST']) 
 def predict():
     if request.json['image'] is None:
-        flash('No file part')
-        return redirect(request.url)
-    # print(request.json['image'])
+            flash('No file part')
+            return redirect(request.url)
     img = np.array(request.json['image'])
-    myModel = app.config['MODEL']
-    scaler = StandardScaler()
-    scaler.mean_ = app.config['MEAN']
-    scaler.var_ = app.config['VAR']
-    scaler.scale_ = app.config['SCALE']
-    img = scaler.transform(img.reshape(1, -1))
-    # print(img)
-    res = {
-        "x":myModel.classes_.tolist(),
-        "y":myModel.predict_proba(img)[0].tolist(),
-        "type": "bar"
-    }
-    # print(res)
-    return res
+    modelName = app.config['MODELNAME']
+    if modelName == 'Logistic Regression':
+        # print(request.json['image'])
+        myModel = app.config['MODEL']
+        scaler = StandardScaler()
+        scaler.mean_ = app.config['MEAN']
+        scaler.var_ = app.config['VAR']
+        scaler.scale_ = app.config['SCALE']
+        img = scaler.transform(img.reshape(1, -1))
+        # print(img)
+        res = {
+            "x":myModel.classes_.tolist(),
+            "y":myModel.predict_proba(img)[0].tolist(),
+            "type": "bar"
+        }
+        # print(res)
+        return res
+    elif modelName == 'Convolutional Neural Network':
+        myModel = app.config['MODEL']
+        res = {
+            "x":list(range(10)),
+            "y":myModel.predict(img.reshape(1,28,28,1)).flatten().tolist(),
+            "type": "bar"
+        }
+        return res
 
 
-def load_model_from_file():
+def load_logres_from_file():
     with BytesIO() as data:
         s3.Bucket('ocr-lite').download_fileobj('logres.m5', data)
         data.seek(0)
@@ -64,13 +76,25 @@ def load_model_from_file():
     # myScale = np.load('logres_scale.npy')
     return (myModel, myModelName, myMean, myVar, myScale)
 
-def init():
-    (myModel, myModelName, myMean, myVar, myScale) = load_model_from_file()
+def init_logres():
+    (myModel, myModelName, myMean, myVar, myScale) = load_logres_from_file()
     app.config['MODEL'] = myModel
     app.config['MODELNAME'] = myModelName
     app.config['MEAN'] = myMean
     app.config['VAR'] = myVar
     app.config['SCALE'] = myScale
+
+def load_CNN_from_file():
+    myModel = load_model('convolutional.h5')
+    return myModel
+
+def init_CNN():
+    myModel = load_CNN_from_file()
+    app.config['MODEL'] = myModel
+    app.config['MODELNAME'] = 'Convolutional Neural Network'
+    app.config['MEAN'] = None
+    app.config['VAR'] = None
+    app.config['SCALE'] = None
 
 if not(os.environ.get('IS_HEROKU', None)):
     app.run()
