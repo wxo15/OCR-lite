@@ -5,6 +5,9 @@ from flask import render_template, flash, request, redirect, url_for
 from joblib import dump, load
 import numpy as np
 import boto3
+import s3fs
+import zipfile
+import tempfile
 from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.models import load_model
 
@@ -19,13 +22,18 @@ else:
         aws_access_key_id= awsaccesskey(),
         aws_secret_access_key=awssecretkey())
 
+    s3fs1 = s3fs.S3FileSystem(key=awsaccesskey(), secret=awssecretkey())
 
 app = Flask(__name__, template_folder='')
 
 @app.route("/", methods=['GET']) 
 def render():
-    init_logres()
-    init_CNN()
+    if not('MODELNAME' in app.config.keys()):
+        init_CNN()
+    elif app.config['MODELNAME'] == 'Convolutional Neural Network':
+        init_logres()
+    else:
+        init_CNN()
     return render_template('index.html', modelName=app.config['MODELNAME'])
 
 @app.route("/predict", methods=['POST']) 
@@ -55,7 +63,7 @@ def predict():
         myModel = app.config['MODEL']
         res = {
             "x":list(range(10)),
-            "y":myModel.predict(img.reshape(1,28,28,1)).flatten().tolist(),
+            "y":myModel.predict((img/255).reshape(1,28,28,1)).flatten().tolist(),
             "type": "bar"
         }
         return res
@@ -85,11 +93,22 @@ def init_logres():
     app.config['SCALE'] = myScale
 
 def load_CNN_from_file():
-    myModel = load_model('convolutional.h5')
-    return myModel
+    with tempfile.TemporaryDirectory() as tempdir:
+        result = s3.download_file("ocr-lite",'convolutional.h5', tempdir + "/convolutional.h5")
+        myModel = load_model(tempdir + "/convolutional.h5")
+        # myModel = load_model('convolutional.h5')
+        return myModel
+
+def s3_get_keras_model():
+    with tempfile.TemporaryDirectory() as tempdir:
+        # Fetch and save the zip file to the temporary directory
+        s3fs1.get("s3://ocr-lite/convolutional.h5", tempdir+"/convolutional.h3")
+        # Load the keras model from the temporary directory
+        return load_model(tempdir+"/convolutional.h3")
+
 
 def init_CNN():
-    myModel = load_CNN_from_file()
+    myModel = s3_get_keras_model()
     app.config['MODEL'] = myModel
     app.config['MODELNAME'] = 'Convolutional Neural Network'
     app.config['MEAN'] = None
@@ -98,3 +117,5 @@ def init_CNN():
 
 if not(os.environ.get('IS_HEROKU', None)):
     app.run()
+
+
