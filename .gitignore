@@ -133,3 +133,8 @@ app/keys.py
 
 # raw testing csv
 app/*.csv
+
+# model files
+app/*.csv
+app/*.h5
+app/*.m5

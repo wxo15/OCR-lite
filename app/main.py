@@ -15,6 +15,11 @@ if os.environ.get('IS_HEROKU', None):
     s3 = boto3.resource('s3',
         aws_access_key_id= os.environ.get('AWS_ACCESS_KEY_ID'),
         aws_secret_access_key= os.environ.get('AWS_SECRET_ACCESS_KEY'))
+
+    s3fs1 = s3fs.S3FileSystem(
+        key= os.environ.get('AWS_ACCESS_KEY_ID'),
+        secret=os.environ.get('AWS_SECRET_ACCESS_KEY'))
+    
 else:
     from keys import awsaccesskey, awssecretkey
 
@@ -94,21 +99,13 @@ def init_logres():
 
 def load_CNN_from_file():
     with tempfile.TemporaryDirectory() as tempdir:
-        result = s3.download_file("ocr-lite",'convolutional.h5', tempdir + "/convolutional.h5")
-        myModel = load_model(tempdir + "/convolutional.h5")
+        s3fs1.get("s3://ocr-lite/convolutional.h5", tempdir+"/convolutional.h3")
+        myModel = load_model(tempdir+"/convolutional.h3")
         # myModel = load_model('convolutional.h5')
         return myModel
 
-def s3_get_keras_model():
-    with tempfile.TemporaryDirectory() as tempdir:
-        # Fetch and save the zip file to the temporary directory
-        s3fs1.get("s3://ocr-lite/convolutional.h5", tempdir+"/convolutional.h3")
-        # Load the keras model from the temporary directory
-        return load_model(tempdir+"/convolutional.h3")
-
-
 def init_CNN():
-    myModel = s3_get_keras_model()
+    myModel = load_CNN_from_file()
     app.config['MODEL'] = myModel
     app.config['MODELNAME'] = 'Convolutional Neural Network'
     app.config['MEAN'] = None
