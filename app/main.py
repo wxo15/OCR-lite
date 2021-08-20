@@ -57,6 +57,8 @@ def predict():
             flash('No file part')
             return redirect(request.url)
     img = np.array(request.json['image'])
+    if not('MODELNAME' in app.config.keys()):
+        init_CNN()
     modelName = app.config['MODELNAME']
     if modelName == 'Logistic Regression':
         # print(request.json['image'])
