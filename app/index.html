@@ -56,7 +56,26 @@
             predict();
         }
         
-        
+        function switchModel() {
+            var xhr = new XMLHttpRequest();
+            document.getElementById("model").innerHTML = "Loading...";
+            xhr.onreadystatechange = function() {
+                if (this.readyState == 4) {
+                    if (this.status == 200) {
+                        res = JSON.parse(xhr.responseText);
+                        document.getElementById("model").innerHTML = res['model'];
+                        predict();
+                    } else {
+                        document.getElementById("model").innerHTML = "Returned code " + this.status;
+                    }
+                }
+            };
+            xhr.open("POST", "/switch", true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send();
+        }
+
+
         function predict() {
             const imageData = copyctx.getImageData(0, 0, copy.width, copy.height);
             const data = imageData.data;
@@ -69,33 +88,38 @@
             document.getElementById("result").innerHTML = "Loading...";
             var xhr = new XMLHttpRequest();
             xhr.onreadystatechange = function() {
-                if (this.readyState == 4 && this.status == 200) {
-                    var layout = {
-                        title: 'Probability against guesses',
-                        xaxis: {
-                            title: "Guesses",
-                            dtick: 1
-                        },
-                        yaxis: {
-                            title: "Probability",
-                            range: [0, 1],
-                            dtick: 0.2
+                if (this.readyState == 4) {
+                    if (this.status == 200) {
+                        var layout = {
+                            title: 'Probability against guesses',
+                            xaxis: {
+                                title: "Guesses",
+                                dtick: 1
+                            },
+                            yaxis: {
+                                title: "Probability",
+                                range: [0, 1],
+                                dtick: 0.2
+                            }
+                        };
+                        res = JSON.parse(xhr.responseText);
+                        var maxprob = -1;
+                        var bestguess = '';
+                        for (var i = 0; i < res['y'].length; i+=1) {
+                            if (res['y'][i] > maxprob) {
+                                maxprob = res['y'][i];
+                                bestguess = res['x'][i];
+                            }
                         }
-                    };
-                    res = JSON.parse(xhr.responseText);
-                    var maxprob = -1;
-                    var bestguess = '';
-                    for (var i = 0; i < res['y'].length; i+=1) {
-                        if (res['y'][i] > maxprob) {
-                            maxprob = res['y'][i];
-                            bestguess = res['x'][i];
-                        }
-                    }
 
-                    Plotly.newPlot('graph', [res], layout, {showSendToCloud:true});
-                    
-                    document.getElementById("result").innerHTML = bestguess;
+                        Plotly.newPlot('graph', [res], layout, {showSendToCloud:true});
+                        
+                        document.getElementById("result").innerHTML = bestguess;
+                    } else {
+                        document.getElementById("result").innerHTML = "Returned code " + this.status;
+                    }
                 }
+                
             };
             xhr.open("POST", "/predict", true);
             xhr.setRequestHeader('Content-Type', 'application/json');
@@ -194,16 +218,18 @@
             </div>
             <ul class="nav navbar-nav">
                 <li class="active"><a href="/">Home</a></li>
-                <li><a href="/">Current model: {{ modelName }}</a></li>
             </ul>
             </div>
         </nav>
+
+        <h3><b>Current model</b>: <span id="model">{{ modelName }}</span></h3>
 
         <div class="row">
             <div class="column">
                 <canvas id="drawpad" width="560" height="560" style="border:1px solid #000000;"></canvas>
                 <canvas id="copy" width="28" height="28" style="border:1px solid #000000;"></canvas>
-                <input type="button" value="clear" id="clr" size="23" onclick="erase()">
+                <input type="button" value="Clear canvas" id="clr" size="25" onclick="erase()">
+                <input type="button" value="Switch model" id="switch" size="50" onclick="switchModel()">
             </div>
             <div class="column">
                 <p><b>Best guess</b>: <span id="result"></span></p>

@@ -31,15 +31,24 @@ else:
 
 app = Flask(__name__, template_folder='')
 
+
 @app.route("/", methods=['GET']) 
 def render():
     if not('MODELNAME' in app.config.keys()):
         init_CNN()
-    elif app.config['MODELNAME'] == 'Convolutional Neural Network':
+    return render_template('index.html', modelName=app.config['MODELNAME'])
+
+@app.route("/switch", methods=['POST']) 
+def switchModel():
+    if app.config['MODELNAME'] == 'Convolutional Neural Network':
         init_logres()
     else:
         init_CNN()
-    return render_template('index.html', modelName=app.config['MODELNAME'])
+    res = {
+        "model":app.config['MODELNAME']
+    }
+    return res
+
 
 @app.route("/predict", methods=['POST']) 
 def predict():
