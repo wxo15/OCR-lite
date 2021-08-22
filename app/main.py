@@ -39,12 +39,13 @@ def render():
 
 @app.route("/switch", methods=['POST']) 
 def switchModel():
-    if not('MODELNAME' in app.config.keys()):
-        init_CNN()
-    elif app.config['MODELNAME'] == 'Convolutional Neural Network':
-        init_logres()
-    else:
-        init_CNN()
+    if request.json['model'] is None:
+        return redirect(request.url)
+    modelName = request.json['model']
+    
+    if not('MODELNAME' in app.config.keys()) or app.config['MODELNAME'] == modelName:
+        init_logres() if modelName == 'Convolutional Neural Network' else init_CNN()
+    
     res = {
         "model":app.config['MODELNAME']
     }
@@ -54,11 +55,14 @@ def switchModel():
 @app.route("/predict", methods=['POST']) 
 def predict():
     if request.json['image'] is None:
-            flash('No file part')
-            return redirect(request.url)
+        flash('No file part')
+        return redirect(request.url)
     img = np.array(request.json['image'])
-    if not('MODELNAME' in app.config.keys()):
-        init_CNN()
+    modelName = request.json['model']
+    
+    if not('MODELNAME' in app.config.keys()) or app.config['MODELNAME'] != modelName:
+        init_CNN() if modelName == 'Convolutional Neural Network' else init_logres()
+    
     modelName = app.config['MODELNAME']
     if modelName == 'Logistic Regression':
         # print(request.json['image'])

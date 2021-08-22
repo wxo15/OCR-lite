@@ -11,6 +11,10 @@
         var x = "white",
             y = 40;
         
+        function myFunc(vars) {
+            return vars
+        }
+
         function init() {
             canvas = document.getElementById('drawpad');
             ctx = canvas.getContext("2d");
@@ -63,6 +67,7 @@
                 if (this.readyState == 4) {
                     if (this.status == 200) {
                         res = JSON.parse(xhr.responseText);
+                        modelName = res['model']
                         document.getElementById("model").innerHTML = res['model'];
                         predict();
                     } else {
@@ -72,7 +77,9 @@
             };
             xhr.open("POST", "/switch", true);
             xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.send();
+            xhr.send(JSON.stringify({
+                'model': modelName
+            }));
         }
 
 
@@ -124,7 +131,8 @@
             xhr.open("POST", "/predict", true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.send(JSON.stringify({
-                image: res
+                'image': res,
+                'model': modelName
             }));
         }
 
@@ -189,6 +197,10 @@
         <script src="https://cdn.plot.ly/plotly-2.3.0.min.js"></script>
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
         <title> OCR-lite</title>
+        <script type="text/javascript">
+            modelName = myFunc({{ modelName|tojson }})
+        </script>
+        
         <style>
             * {
               box-sizing: border-box;
@@ -229,7 +241,7 @@
                 <canvas id="drawpad" width="560" height="560" style="border:1px solid #000000;"></canvas>
                 <canvas id="copy" width="28" height="28" style="border:1px solid #000000;"></canvas>
                 <input type="button" value="Clear canvas" id="clr" size="25" onclick="erase()">
-                <!--<input type="button" value="Switch model" id="switch" size="50" onclick="switchModel()">-->
+                <input type="button" value="Switch model" id="switch" size="50" onclick="switchModel()">
             </div>
             <div class="column">
                 <p><b>Best guess</b>: <span id="result"></span></p>
