@@ -2,7 +2,7 @@
 
 A simple Python Flask app to allow users to write a digit on a canvas, and a model will analyze and output the predicted number. Amazon S3 is used for storage of models and parameters.
 
-Link to [Heroku App](http://ocr-lite.herokuapp.com/).
+Web app taken down due to Heroku ending their free plan.
 
 
 ## Models available:
